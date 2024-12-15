@@ -1,0 +1,86 @@
+/* Common Styles */
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #f2f2f2;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    color: #333;
+}
+
+/* Home Page Styles */
+#home-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+#start-button {
+    padding: 10px 20px;
+    font-size: 18px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#start-button:hover {
+    background-color: #45a049;
+}
+
+/* Game Page Styles */
+#game-container {
+    margin-top: 20px;
+}
+
+#game-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 50px);
+    grid-gap: 10px;
+    justify-content: center;
+    margin: 20px auto;
+}
+
+.bomb {
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+/* Bomb Colors */
+.green {
+    background-color: green;
+}
+
+.red {
+    background-color: red;
+}
+
+.yellow {
+    background-color: yellow;
+}
+
+/* Button Styles */
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 20px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
