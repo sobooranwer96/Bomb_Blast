@@ -1,18 +1,54 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Get DOM elements
+    const homeContainer = document.getElementById("home-container");
+    const gameContainer = document.getElementById("game-container");
     const gameGrid = document.getElementById("game-grid");
     const counter = document.getElementById("counter");
     const restartButton = document.getElementById("restart-button");
+    const startButton = document.getElementById("start-button");
     
     let bombsDefused = 0;
-    let bombsExploded = 0;
     let bombsRemaining = 20;
     let gameInterval;
     let explosionInterval;
-    
-    // Initialize the grid
-    initGrid();
-    updateCounter();
+    let lives = 3;
+    let difficultyLevel = 1;
+    let bombFrequency = 500; // Starting frequency in milliseconds
 
+    // Add start button listener
+    startButton.addEventListener("click", () => {
+        homeContainer.style.display = "none";
+        gameContainer.style.display = "block";
+        startGame();
+    });
+
+    function updateLifeDisplay() {
+        const lifeBoxes = document.querySelectorAll(".life-box");
+        for (let i = 0; i < lifeBoxes.length; i++) {
+            if (i >= lives) {
+                lifeBoxes[i].remove();
+            }
+        }
+    }
+
+    function resetLifeDisplay() {
+        const lifeContainer = document.querySelector(".life-container");
+        const lifeBoxes = document.querySelectorAll(".life-box");
+        
+        // First remove existing boxes
+        lifeBoxes.forEach(box => box.remove());
+        
+        // Then create 3 new life boxes
+        for (let i = 0; i < 3; i++) {
+            const lifeBox = document.createElement("div");
+            lifeBox.classList.add("life-box");
+            lifeContainer.appendChild(lifeBox);
+        }
+        
+        // Reset lives counter
+        lives = 3;
+    }
+    
     // Bomb click handler
     gameGrid.addEventListener("click", (event) => {
         const bomb = event.target;
@@ -27,6 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 bombsDefused++;
                 bombsRemaining--;
                 updateCounter();
+                updateDifficulty();
             }
         }
     });
@@ -47,105 +84,102 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Update the counter
     function updateCounter() {
-        counter.textContent = `Bombs Defused: ${bombsDefused} | Bombs Exploded: ${bombsExploded}`;
+        counter.textContent = `Bombs Defused: ${bombsDefused}`;
     }
-    startGame();
-    // // Randomly turn bombs red every 100ms
-    // gameInterval = setInterval(() => {
-    //     const bombs = document.querySelectorAll(".bomb");
-    //     const randomBomb = bombs[Math.floor(Math.random() * bombs.length)];
-        
-    //     // Only turn a bomb red if it's green (idle)
-    //     if (randomBomb.dataset.status === "green") {
-    //         randomBomb.classList.remove("green");
-    //         randomBomb.classList.add("red");
-    //         randomBomb.dataset.status = "red";
-            
-    //         // Set a timeout to turn the bomb yellow (explode) if not clicked within 2 seconds
-    //         setTimeout(() => {
-    //             if (randomBomb.dataset.status === "red") {
-    //                 randomBomb.classList.remove("red");
-    //                 randomBomb.classList.add("yellow");
-    //                 randomBomb.dataset.status = "yellow";
-    //                 bombsExploded++;
-    //                 updateCounter();
 
-    //                 // After 200ms, reset the bomb to green
-    //                 setTimeout(() => {
-    //                     if (randomBomb.dataset.status === "yellow") {
-    //                         randomBomb.classList.remove("yellow");
-    //                         randomBomb.classList.add("green");
-    //                         randomBomb.dataset.status = "green";
-    //                         bombsRemaining++;
-    //                     }
-    //                 }, 200); // Bomb turns back green after 200ms
-    //             }
-    //         }, 2000); // 2 seconds before explosion
-    //     }
-    // }, 500); // Bomb turns red every 100ms
-
-    // Check if game over (if 3 bombs exploded)
-    explosionInterval = setInterval(() => {
-        if (bombsExploded === 3) {
-            alert("Game Over!");
-            clearInterval(gameInterval);
-            clearInterval(explosionInterval);
-        }
-    }, 1000);
-
-    // Restart the game
     function restartGame() {
         clearInterval(gameInterval);
         clearInterval(explosionInterval);
         bombsDefused = 0;
-        bombsExploded = 0;
         bombsRemaining = 20;
+        difficultyLevel = 1; // Reset difficulty
+        bombFrequency = 500; // Reset frequency
         initGrid();
         updateCounter();
+        resetLifeDisplay();
         startGame();
     }
 
-    // Start the game (again after restart)
     function startGame() {
+        if (explosionInterval) {
+            clearInterval(explosionInterval);
+        }
+        
+        initGrid();
+        updateCounter();
+        difficultyLevel = 1; // Reset difficulty
+        bombFrequency = 500; // Reset frequency
+        
+        explosionInterval = setInterval(() => {
+            if (lives <= 0) {
+                clearInterval(gameInterval);    // Stop the game interval
+                clearInterval(explosionInterval); // Stop the explosion interval
+                return;  // Exit the function early
+            }
+        }, 100);
+        
+        startGameInterval();
+    }
+
+    function startGameInterval() {
         gameInterval = setInterval(() => {
+            // Add a check for lives at the start of the interval
+            if (lives <= 0) {
+                return;  // Don't create new red bombs if no lives left
+            }
+
+            // Only spawn one bomb, remove the difficulty level loop
             const bombs = document.querySelectorAll(".bomb");
             const randomBomb = bombs[Math.floor(Math.random() * bombs.length)];
             
-            // Only turn a bomb red if it's green (idle)
             if (randomBomb.dataset.status === "green") {
                 randomBomb.classList.remove("green");
                 randomBomb.classList.add("red");
                 randomBomb.dataset.status = "red";
+                randomBomb.dataset.redTime = Date.now();
                 
-                // Set a timeout to turn the bomb yellow (explode) if not clicked within 2 seconds
                 setTimeout(() => {
-                    if (randomBomb.dataset.status === "red") {
+                    if (lives <= 0) {
+                        return;  // Don't process explosions if no lives left
+                    }
+
+                    if (randomBomb.dataset.status === "red" && 
+                        Date.now() - randomBomb.dataset.redTime >= 2000) {
                         randomBomb.classList.remove("red");
                         randomBomb.classList.add("yellow");
                         randomBomb.dataset.status = "yellow";
-                        bombsExploded++;
                         updateCounter();
+                        lives--;  // Decrease life when a bomb explodes
+                        updateLifeDisplay();
 
-                        // After 200ms, reset the bomb to green
+                        // After 500ms, reset the bomb to green
                         setTimeout(() => {
+                            if (lives <= 0) {
+                                return;  // Don't reset to green if no lives left
+                            }
+
                             if (randomBomb.dataset.status === "yellow") {
                                 randomBomb.classList.remove("yellow");
                                 randomBomb.classList.add("green");
                                 randomBomb.dataset.status = "green";
                                 bombsRemaining++;
                             }
-                        }, 500); // Bomb turns back green after 200ms
+                        }, 500);  // After 500ms, reset the bomb to green
                     }
-                }, 2000); // 2 seconds before explosion
+                }, 2000);  // Set a timeout to turn the bomb yellow (explode) if not clicked within 2 seconds
             }
-        }, 500); // Bomb turns red every 100ms
+        }, bombFrequency);
     }
-     // Check if game over (if 3 bombs exploded)
-     explosionInterval = setInterval(() => {
-        if (bombsExploded === 3) {
-            alert("Game Over!");
+
+    function updateDifficulty() {
+        if (bombsDefused > 0 && bombsDefused % 50 === 0) {
+            difficultyLevel++;
+            // Make the frequency decrease more gradually
+            bombFrequency = Math.max(300, 540 - (difficultyLevel * 20)); // Adjusted values
+            
+            // Restart the game interval with new frequency
             clearInterval(gameInterval);
-            clearInterval(explosionInterval);
+            startGameInterval();
         }
-    }, 100);
+    }
 });
